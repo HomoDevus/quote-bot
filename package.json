@@ -1,0 +1,17 @@
+{
+  "name": "quote-bot-2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "handler.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@notionhq/client": "^0.1.7",
+    "dotenv": "^10.0.0",
+    "telegraf": "^4.3.0"
+  }
+}
