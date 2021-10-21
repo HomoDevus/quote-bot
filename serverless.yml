@@ -23,3 +23,6 @@ functions:
       - schedule:
           rate: cron(0 9 * * ? *)
           enabled: true
+      - schedule:
+          rate: cron(0 23 * * ? *)
+          enabled: true
