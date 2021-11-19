@@ -1,6 +1,13 @@
+const {config} = require('dotenv');
 const { Client } = require('@notionhq/client');
+const fetch = require('node-fetch');
+const axios = require('axios')
+
+config()
+
 const dataBaseId = process.env.NOTION_DATABASE_ID;
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
+let books = [{title: 'af', author: 'v', notes: [{quoteText: 'b', shown: 1}, 'c']}];
 let notes = [];
 
 function getRandomInt(max) {
@@ -34,24 +41,87 @@ async function getAllPagesLink() {
                         sectionText += textPart.plain_text
                     }
                     notes.push({
-                        title: page.header.properties.Title.title[0].plain_text,
-                        author: page.header.properties.Author.rich_text[0].plain_text,
                         quoteText: sectionText,
-                        sectionId: section.id
+                        sectionId: section.id,
+                        shown: getShownProp(sectionText)
                     });
                 }
+                books.push({
+                    title: page.header.properties.Title.title[0].plain_text,
+                    author: page.header.properties.Author.rich_text[0].plain_text,
+                    notes: notes
+                })
+                notes = [];
             }
         }
     )
 }
 
-module.exports.getQuote = async function getQuote() {
-    await getAllPagesLink();
-    let randomNote = getRandomBlock(notes)
-    let textForUpdate = configureTextForUpdate(randomNote.quoteText)
-    await updateBlock(randomNote.sectionId, textForUpdate)
-    randomNote.quoteText = textForUpdate
-    return exports.note = randomNote;
+// module.exports.getQuote = async function getQuote() {
+//     await getAllPagesLink();
+//     let randomNote = getRandomBlock(notes)
+//     let textForUpdate = configureTextForUpdate(randomNote.quoteText)
+//     await updateBlock(randomNote.sectionId, textForUpdate)
+//     randomNote.quoteText = textForUpdate
+//     return exports.note = randomNote;
+// }
+
+async function updateAPI(url) {
+    // await getAllPagesLink();
+
+    // let res = await fetch(url)
+    // let json = await res.json();
+    // console.log(json)
+
+    try {
+        // await fetch(url, {method: 'delete'});
+        let req = await axios.delete(url + '/' + 3)
+        console.log(req.data)
+    } catch (e) {
+        console.log(e)
+    }
+
+    // let res = await fetch(url)
+    // let json = await res.json();
+    // console.log("first check", json)
+
+    // for (let book of books) {
+    //     try {
+    //         let response = await fetch(url, {
+    //         method: "PUT",
+    //         headers: {
+    //         "Content-Type": "application/json",
+    //         },
+    //         body: JSON.stringify(book),
+    //         })
+    //         let json = await response.json()
+    //         console.log(json)
+    //     } catch(e) {
+    //         console.error('API error:', e)
+    //     }
+    // }
+}
+
+updateAPI('http://localhost:8000/books')
+
+function postRequest() {
+    let data = { 
+        "title": notes.title, 
+        "author": notes.quthor,
+        "text": notes.quoteText,
+        "shown": getShownProp(quoteText)
+      }
+      
+       fetch('http://localhost:8000/posts/', {
+       method: "POST",
+       headers: {
+       "Content-Type": "application/json",
+       },
+       body: JSON.stringify(data),
+       })
+       .then(response => response.json())
+       .then(response => console.log('Success:', JSON.stringify(response)))
+       .catch(error => console.error('Error:', error));
 }
 
 function getRandomBlock(notes) {

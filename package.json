@@ -1,17 +1,20 @@
 {
-  "name": "quote-bot-2",
+  "name": "quote-bot",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "handler.js"
+    "start": "node notion-interact.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@notionhq/client": "^0.4.4",
+    "axios": "^0.24.0",
     "dotenv": "^10.0.0",
+    "json-server": "^0.17.0",
+    "node-fetch": "^2.6.6",
     "telegraf": "^4.4.2"
   }
 }
