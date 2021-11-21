@@ -9,6 +9,7 @@ const dataBaseId = process.env.NOTION_DATABASE_ID;
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 let books = [{title: 'af', author: 'v', notes: [{quoteText: 'b', shown: 1}, 'c']}];
 let notes = [];
+const API_URL = process.env.API_URL;
 
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
@@ -34,15 +35,18 @@ async function getAllPagesLink() {
     await Promise.all(requests)
         .then((result) => {
             for (let page of result) {
+                let id = 0;
                 for (let section of page.sections.results) {
                     if (section.paragraph.text.length === 0) continue;
                     let sectionText = '';
                     for (let textPart of section.paragraph.text) {
                         sectionText += textPart.plain_text
                     }
+                    id += 1
                     notes.push({
                         quoteText: sectionText,
                         sectionId: section.id,
+                        id: id,
                         shown: getShownProp(sectionText)
                     });
                 }
@@ -65,64 +69,6 @@ async function getAllPagesLink() {
 //     randomNote.quoteText = textForUpdate
 //     return exports.note = randomNote;
 // }
-
-async function updateAPI(url) {
-    // await getAllPagesLink();
-
-    // let res = await fetch(url)
-    // let json = await res.json();
-    // console.log(json)
-
-    try {
-        // await fetch(url, {method: 'delete'});
-        let req = await axios.delete(url + '/' + 3)
-        console.log(req.data)
-    } catch (e) {
-        console.log(e)
-    }
-
-    // let res = await fetch(url)
-    // let json = await res.json();
-    // console.log("first check", json)
-
-    // for (let book of books) {
-    //     try {
-    //         let response = await fetch(url, {
-    //         method: "PUT",
-    //         headers: {
-    //         "Content-Type": "application/json",
-    //         },
-    //         body: JSON.stringify(book),
-    //         })
-    //         let json = await response.json()
-    //         console.log(json)
-    //     } catch(e) {
-    //         console.error('API error:', e)
-    //     }
-    // }
-}
-
-updateAPI('http://localhost:8000/books')
-
-function postRequest() {
-    let data = { 
-        "title": notes.title, 
-        "author": notes.quthor,
-        "text": notes.quoteText,
-        "shown": getShownProp(quoteText)
-      }
-      
-       fetch('http://localhost:8000/posts/', {
-       method: "POST",
-       headers: {
-       "Content-Type": "application/json",
-       },
-       body: JSON.stringify(data),
-       })
-       .then(response => response.json())
-       .then(response => console.log('Success:', JSON.stringify(response)))
-       .catch(error => console.error('Error:', error));
-}
 
 function getRandomBlock(notes) {
     let minShown = Infinity;
@@ -192,4 +138,90 @@ async function  updateBlock(blockId, text) {
             }]
         }
     });
+}
+
+// ========== Update API ==========
+async function updateAPI() {
+    await getAllPagesLink();
+
+    let dbBooks = await getReq('/books/');
+    let dbNotes = await getReq('/notes/');
+
+    for (let book of books) {
+        // Get book on API
+        let dbTargetBook = dbBooks.filter(dbBook => dbBook.title === book.title)
+        if (dbTargetBook.length === 0) { // If book dosen't exist on API
+            // Add book to API
+            let bookId = await postReq('/books/', {title: book.title, author: book.author});
+            // Add notes to API
+            for (let note of book.notes) {
+                await postReq('/notes/', {noteText: note, bookId: bookId})
+            }
+        } else {
+            // Check if there is new or changed notes in Notion
+            // Filter by ID. Compare two emount. If on api less add one. If on Notion less delete one from API.
+            // Compare every Object on API wit every Object on Notion. If there any difference update
+            let dbBookNotes = dbNotes.filter((note) => note.bookId === book.id);
+            dbBookNotes = dbBookNotes.sort((a, b) => a.noteId - b.noteId);
+            book.notes = book.notes.sort((a, b) => a.id - b.id)
+
+            if (dbBookNotes.length > book.notes.length) {
+                let notesToDelete = dbBookNotes.filter((note) => !note.includes(book.notes))
+                for (let note of notesToDelete) {
+                    await deleteReq(`/notes/${note.id}`)
+                }
+            } else if (dbBookNotes.length < book.notes.length) {
+                let newNoteId = dbBookNotes.length
+                let howMuchToAdd = book.notes.length - dbBookNotes.length
+                for (; howMuchToAdd--; howMuchToAdd === 0) {
+                    newNoteId += 1
+                    await postReq('/notes/', {...book.notes[newNoteId], bookId: book.id, noteId: newNoteId})
+                }
+            }
+            // let dbBookNotes = dbNotes.filter((note) => note.bookId === book.id);
+            // for (let note of book.notes) {
+            //     for (let dbNote of dbBookNotes) {
+            //         if (dbNote.noteText === note.noteText) {
+            //             continue
+            //         }
+            //     }
+            //     // If there is no note with t
+            // }
+        }
+    }
+}
+
+async function getReq(path) {
+    try {
+        let res = await fetch(URL + path)
+        let json = await res.json();
+        console.log("GET:", json)
+        return json
+    } catch (e) {
+        console.error("GET:", e)
+    }
+}
+
+async function postReq(path, data) {
+    try {
+        let res = await fetch(URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        })
+        let json = await res.json()
+        console.log("POST:", JSON.stringify(json))
+    } catch (e) {
+        console.error("POST:", e)
+    }
+}
+
+async function deleteReq(path) {
+    try {
+        await fetch(URL + path, {method: 'delete'});
+    } catch (e) {
+        console.error("DELETE", e)
+    }
 }
