@@ -7,9 +7,22 @@ config()
 
 const dataBaseId = process.env.NOTION_DATABASE_ID;
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
-let books = [{title: 'af', author: 'v', notes: [{quoteText: 'b', shown: 1}, 'c']}];
+let books = [];
 let notes = [];
 const API_URL = process.env.API_URL;
+
+Promise.delay = function(t, val) {
+    return new Promise(resolve => {
+        setTimeout(resolve.bind(null, val), t);
+    });
+}
+
+Promise.raceAll = function(promises, timeoutTime, timeoutVal) {
+    return Promise.all(promises.map(p => {
+        return Promise.race([p, Promise.delay(timeoutTime, timeoutVal)])
+    }));
+}
+
 
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
@@ -46,7 +59,6 @@ async function getAllPagesLink() {
                     notes.push({
                         quoteText: sectionText,
                         sectionId: section.id,
-                        id: id,
                         shown: getShownProp(sectionText)
                     });
                 }
@@ -140,52 +152,96 @@ async function  updateBlock(blockId, text) {
     });
 }
 
+
 // ========== Update API ==========
+updateAPI()
+
 async function updateAPI() {
     await getAllPagesLink();
 
+    console.log('DATA FROM NOTION RECIVED')
+
     let dbBooks = await getReq('/books/');
     let dbNotes = await getReq('/notes/');
+    let requests = [];
 
     for (let book of books) {
-        // Get book on API
+        // Get book from API
         let dbTargetBook = dbBooks.filter(dbBook => dbBook.title === book.title)
         if (dbTargetBook.length === 0) { // If book dosen't exist on API
             // Add book to API
-            let bookId = await postReq('/books/', {title: book.title, author: book.author});
+            let newBook = await postReq('/books/', {title: book.title, author: book.author});
             // Add notes to API
             for (let note of book.notes) {
-                await postReq('/notes/', {noteText: note, bookId: bookId})
+                await postReq('/notes/', {...note, bookId: newBook.id})
             }
+            // if (requests.length) {
+            //     await Promise.raceAll(requests, 1000, null)
+            //     requests = []
+            // }
         } else {
-            // Check if there is new or changed notes in Notion
-            // Filter by ID. Compare two emount. If on api less add one. If on Notion less delete one from API.
-            // Compare every Object on API wit every Object on Notion. If there any difference update
-            let dbBookNotes = dbNotes.filter((note) => note.bookId === book.id);
-            dbBookNotes = dbBookNotes.sort((a, b) => a.noteId - b.noteId);
-            book.notes = book.notes.sort((a, b) => a.id - b.id)
+            // if (dbBookNotes.length > book.notes.length) {
+            //     let notesToDelete = dbBookNotes.filter((note) => !note.includes(book.notes))
+            //     for (let note of notesToDelete) {
+            //         await deleteReq(`/notes/${note.id}`)
+            //     }
+            // } else if (dbBookNotes.length < book.notes.length) {
+            //     let newNoteId = dbBookNotes.length
+            //     let howMuchToAdd = book.notes.length - dbBookNotes.length
+            //     for (; howMuchToAdd--; howMuchToAdd === 0) {
+            //         newNoteId += 1
+            //         await postReq('/notes/', {...book.notes[newNoteId], bookId: book.id, noteId: newNoteId})
+            //     }
+            // }
 
-            if (dbBookNotes.length > book.notes.length) {
-                let notesToDelete = dbBookNotes.filter((note) => !note.includes(book.notes))
-                for (let note of notesToDelete) {
-                    await deleteReq(`/notes/${note.id}`)
-                }
-            } else if (dbBookNotes.length < book.notes.length) {
-                let newNoteId = dbBookNotes.length
-                let howMuchToAdd = book.notes.length - dbBookNotes.length
-                for (; howMuchToAdd--; howMuchToAdd === 0) {
-                    newNoteId += 1
-                    await postReq('/notes/', {...book.notes[newNoteId], bookId: book.id, noteId: newNoteId})
-                }
+            dbTargetBook = dbTargetBook[0]
+            let dbBookNotes = dbNotes.filter((note) => note.bookId === dbTargetBook.id); // Notes from Server
+            let bookNotes = book.notes; // Notes from Notion
+            let toRemove, toAdd
+
+            function arrayStringfy(array) {
+                return array.map(item => JSON.stringify(item))
             }
-            // let dbBookNotes = dbNotes.filter((note) => note.bookId === book.id);
+
+            // In order to compare objects we need to stringfy them.
+            dbBookNotes = arrayStringfy(dbBookNotes)
+            bookNotes = arrayStringfy(bookNotes)
+
+            // Add notes that exist on Server but not in Notion
+            toRemove = dbBookNotes.filter(item => !bookNotes.includes(item))
+            // Add notes that exist on Notion but not on Server
+            toAdd = bookNotes.filter(item => !dbBookNotes.includes(item))
+
+            // console.log("Test 1", bookNotes)
+            // console.log("Test 2", toAdd)
+
+            for (let noteToRemove of toRemove) {
+            // In order to have acess to Object properties we have to parse them from JSON frist
+                noteToRemove = JSON.parse(noteToRemove)
+                requests.push(deleteReq(`/notes/${noteToRemove.id}`))
+            }
+
+            for (let noteToAdd of toAdd) {
+                noteToAdd = JSON.parse(noteToAdd)
+                // console.log(noteToAdd)
+                await postReq('/notes/', {...noteToAdd, bookId: dbTargetBook.id})
+            }
+
+            // let ireration = 0
+
             // for (let note of book.notes) {
+            //     iteration += 1;
             //     for (let dbNote of dbBookNotes) {
             //         if (dbNote.noteText === note.noteText) {
-            //             continue
+            //             dbBookNotes = dbBookNotes.filter((item) => item.noteText !== dbNote.noteText)
             //         }
             //     }
-            //     // If there is no note with t
+            //     // If there is 
+            //     await postReq('/notes/', {...note, bookId: book.id, noteId: iteration})
+            // }
+            // // If there is notes that has been deleted, update the API
+            // if (dbBookNotes.length) {
+            //     for (dbBookNotes)
             // }
         }
     }
@@ -193,9 +249,9 @@ async function updateAPI() {
 
 async function getReq(path) {
     try {
-        let res = await fetch(URL + path)
+        let res = await fetch(API_URL + path)
         let json = await res.json();
-        console.log("GET:", json)
+        // console.log("GET:", json)
         return json
     } catch (e) {
         console.error("GET:", e)
@@ -204,15 +260,16 @@ async function getReq(path) {
 
 async function postReq(path, data) {
     try {
-        let res = await fetch(URL, {
+        var res = await fetch(API_URL + path, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(data),
         })
-        let json = await res.json()
-        console.log("POST:", JSON.stringify(json))
+        console.log(res.status)
+        // let json = await res.json()
+        // return json
     } catch (e) {
         console.error("POST:", e)
     }
@@ -220,7 +277,7 @@ async function postReq(path, data) {
 
 async function deleteReq(path) {
     try {
-        await fetch(URL + path, {method: 'delete'});
+        await fetch(API_URL + path, {method: 'delete'});
     } catch (e) {
         console.error("DELETE", e)
     }

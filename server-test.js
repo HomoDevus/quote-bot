@@ -13,10 +13,10 @@ let book = {
 updateAPI()
 
 async function updateAPI() {
-    // await getReq();
-    await deleteReq()
-    // await postReq(book)
     await getReq();
+    // await deleteReq()
+    // await postReq(book)
+    // await getReq();
 }
 
 async function getReq() {
