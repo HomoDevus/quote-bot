@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "node notion-interact.js"
+    "start": "node src/main.mjs",
+    "test": "node src/test.js"
   },
   "keywords": [],
   "author": "",

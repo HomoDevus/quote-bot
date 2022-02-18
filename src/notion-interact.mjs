@@ -1,15 +1,12 @@
-const {config} = require('dotenv');
-const { Client } = require('@notionhq/client');
-const fetch = require('node-fetch');
-const axios = require('axios')
+import {config} from "dotenv";
+import {Client} from "@notionhq/client";
 
 config()
 
 const dataBaseId = process.env.NOTION_DATABASE_ID;
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
-let books = [];
-let notes = [];
-const API_URL = process.env.API_URL;
+export let books = [];
+export let notes = [];
 
 Promise.delay = function(t, val) {
     return new Promise(resolve => {
@@ -39,7 +36,7 @@ async function getDataBase(databaseId) {
     return await notion.databases.query({ database_id: databaseId })
 }
 
-async function getAllPagesLink() {
+export async function getAllPagesLink() {
     let requests = [];
     let dataBase = await getDataBase(dataBaseId);
     for (let page of dataBase.results) {
@@ -71,6 +68,7 @@ async function getAllPagesLink() {
             }
         }
     )
+    console.log(books)
 }
 
 // module.exports.getQuote = async function getQuote() {
@@ -137,7 +135,7 @@ function configureTextForUpdate(prev) {
  * @param text
  * @returns {Promise<void>}
  */
-async function  updateBlock(blockId, text) {
+async function updateBlock(blockId, text) {
     const response = await notion.blocks.update({
         block_id: blockId,
         "paragraph": {
@@ -150,91 +148,4 @@ async function  updateBlock(blockId, text) {
             }]
         }
     });
-}
-
-
-// ========== Update API ==========
-updateAPI()
-
-async function updateAPI() {
-    await getAllPagesLink();
-
-    let dbBooks = await getReq('/books/');
-    let dbNotes = await getReq('/notes/');
-
-    for (let book of books) {
-        // Get book from API
-        let dbTargetBook = dbBooks.filter(dbBook => dbBook.title === book.title)
-        if (dbTargetBook.length === 0) { // If book dosen't exist on API
-            // Add book to API
-            let newBook = await postReq('/books/', {title: book.title, author: book.author});
-            // Add notes to API
-            for (let note of book.notes) {
-                await postReq('/notes/', {...note, bookId: newBook.id})
-            }
-        } else {
-            dbTargetBook = dbTargetBook[0]
-            let dbBookNotes = dbNotes.filter((note) => note.bookId === dbTargetBook.id); // Notes from Server
-            let bookNotes = book.notes; // Notes from Notion
-            let toRemove, toAdd
-
-            function arrayStringfy(array) {
-                return array.map(item => JSON.stringify(item))
-            }
-
-            // In order to compare objects we need to stringfy them.
-            // dbBookNotes = arrayStringfy(dbBookNotes)
-            // bookNotes = arrayStringfy(bookNotes)
-
-            // Add notes that exist on Server but not in Notion
-            let dbNotesText = dbBookNotes.map(note => note.quoteText)
-            let notesText = bookNotes.map(note => note.quoteText)
-            toRemove = dbBookNotes.filter(item => !notesText.includes(item.quoteText))
-            // Add notes that exist on Notion but not on Server
-            toAdd = bookNotes.filter(item => !dbNotesText.includes(item.quoteText))
-
-            for (let noteToRemove of toRemove) {
-            // In order to have acess to Object properties we have to parse them from JSON frist
-                await deleteReq(`/notes/${noteToRemove.id}`)
-            }
-
-            for (let noteToAdd of toAdd) {
-                await postReq('/notes/', {...noteToAdd, bookId: dbTargetBook.id})
-            }
-        }
-    }
-}
-
-async function getReq(path) {
-    try {
-        let res = await fetch(API_URL + path)
-        let json = await res.json();
-        return json
-    } catch (e) {
-        console.error("GET:", e)
-    }
-}
-
-async function postReq(path, data) {
-    try {
-        var res = await fetch(API_URL + path, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-        })
-        let json = await res.json()
-        return json
-    } catch (e) {
-        console.error("POST:", e)
-    }
-}
-
-async function deleteReq(path) {
-    try {
-        await fetch(API_URL + path, {method: 'delete'});
-    } catch (e) {
-        console.error("DELETE", e)
-    }
 }

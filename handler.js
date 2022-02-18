@@ -1,5 +1,5 @@
 const { Telegraf } = require('telegraf') // import telegram lib
-let { getQuote } = require('./notion-interact');
+let { getQuote } = require('./src/notion-interact');
 
 const bot = new Telegraf(process.env.BOT_TOKEN) // get the token from envirement variable
 const chatId = process.env.CHAT_ID

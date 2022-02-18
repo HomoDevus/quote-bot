@@ -5,7 +5,7 @@ const middlewares = jsonServer.defaults()
 
 server.use(middlewares)
 server.use(router)
-// server.use(jsonServer.rewriter('./routes.json'))
+server.use(jsonServer.rewriter('./routes.json'))
 server.listen(process.env.PORT || 8000, () => {
   console.log('JSON Server is running')
 })

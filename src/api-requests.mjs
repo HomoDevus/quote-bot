@@ -1,35 +1,22 @@
-const axios = require("axios");
-const fetch = require("node-fetch");
+import fetch from "node-fetch";
 
-const URL = 'http://localhost:8000/books/1'
-let book = {
-    author: "ABC",
-    title: "Title",
-    notes: [{quoteText: "ABC", id: 1, notesId: 1},{quoteText: "note number 2", id: 2, notesId: 2}, {quoteText: "note number 3", id: 3, notesId: 3}]
-}
+const URL = 'http://localhost:8000'
 
-// let note = {quoteText: "Test", id: 2}
+export async function getReq(path, id = false) {
+    if (id) {
+        path += id.toString()
+    }
 
-updateAPI()
-
-async function updateAPI() {
-    await getReq();
-    // await deleteReq()
-    // await postReq(book)
-    // await getReq();
-}
-
-async function getReq() {
     try {
-        let res = await fetch(URL)
+        let res = await fetch(URL + path)
         let json = await res.json();
-        console.log("GET:", json)
+        return json
     } catch (e) {
         console.error("GET:", e)
     }
 }
 
-async function postReq(data) {
+export async function postReq(data) {
     try {
         let res = await fetch(URL, {
             method: "POST",
@@ -45,21 +32,15 @@ async function postReq(data) {
     }
 }
 
-async function deleteReq() {
+export async function deleteReq() {
     try {
         await fetch(URL, {method: 'delete'});
     } catch (e) {
         console.error('DELETE', e)
     }
-    // try {
-    // let req = await axios.delete(URL)
-    //     console.log("DELETE:", req.data)
-    // } catch (e) {
-    //     console.error("DELETE", e)
-    // }
 }
 
-async function putReq(data, id) {
+export async function putReq(data, id) {
     try {
         let response = await fetch(URL + id, {
             method: 'PUT',
