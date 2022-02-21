@@ -5,8 +5,6 @@ config()
 
 const dataBaseId = process.env.NOTION_DATABASE_ID;
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
-export let books = [];
-let notes = [];
 
 Promise.delay = function(t, val) {
     return new Promise(resolve => {
@@ -37,6 +35,8 @@ async function getDataBase(databaseId) {
 }
 
 export async function getAllPagesLink() {
+    let books = [];
+    let notes = [];
     let requests = [];
     let dataBase = await getDataBase(dataBaseId);
     for (let page of dataBase.results) {
@@ -68,30 +68,8 @@ export async function getAllPagesLink() {
             }
         }
     )
-}
 
-// module.exports.getQuote = async function getQuote() {
-//     await getAllPagesLink();
-//     let randomNote = getRandomBlock(notes)
-//     let textForUpdate = configureTextForUpdate(randomNote.quoteText)
-//     await updateBlock(randomNote.sectionId, textForUpdate)
-//     randomNote.quoteText = textForUpdate
-//     return exports.note = randomNote;
-// }
-
-function getRandomBlock(notes) {
-    let minShown = Infinity;
-    let minShownNotes = [];
-    for (let note of notes) {
-        let shown = getShownProp(note.quoteText)
-        if (shown < minShown) {
-            minShown = shown
-            minShownNotes = [note]
-        } else if (shown === minShown) {
-            minShownNotes.push(note)
-        }
-    }
-    return minShownNotes[getRandomInt(minShownNotes.length)]
+    return books
 }
 
 function getShownProp(text) {
@@ -107,44 +85,4 @@ function getShownProp(text) {
     } else {
         return 0
     }
-}
-
-/**
- * Add shown to previous str if there isn't one. If there is add +1 to the shown counter.
- * @param prev
- * @param blockId
- * @returns {`${string}[Shown: ${number}]`}
- */
-function configureTextForUpdate(prev) {
-    let shown = getShownProp(prev)
-    let counterPosition = prev.indexOf(' [Shown: ')
-    let newText = ''
-
-    if (shown === 0) {
-        newText = `${prev} [Shown: 1]`
-    } else {
-        newText = `${prev.slice(0, counterPosition)} [Shown: ${shown + 1}]`
-    }
-    return newText
-}
-
-/**
- * Replace block text in notion.
- * @param blockId
- * @param text
- * @returns {Promise<void>}
- */
-async function updateBlock(blockId, text) {
-    const response = await notion.blocks.update({
-        block_id: blockId,
-        "paragraph": {
-            "text": [{
-                "type": "text",
-                "text": {
-                    "content": text,
-                    "link": null
-                }
-            }]
-        }
-    });
 }

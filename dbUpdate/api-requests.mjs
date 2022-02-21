@@ -1,6 +1,9 @@
 import fetch from "node-fetch";
+import {config} from "dotenv";
 
-const URL = 'https://quote-bot-db.herokuapp.com'
+config()
+
+const URL = process.env.API_URL
 
 export async function getReq(path, id = false) {
     if (id) {
