@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 
-const URL = 'http://localhost:8000'
+const URL = 'https://quote-bot-db.herokuapp.com/'
 
 export async function getReq(path, id = false) {
     if (id) {
