@@ -16,9 +16,9 @@ export async function getReq(path, id = false) {
     }
 }
 
-export async function postReq(data) {
+export async function postReq(path, data) {
     try {
-        let res = await fetch(URL, {
+        let res = await fetch(URL + path, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -26,23 +26,23 @@ export async function postReq(data) {
             body: JSON.stringify(data),
         })
         let json = await res.json()
-        console.log("POST:", JSON.stringify(json))
+        return json
     } catch (e) {
         console.error("POST:", e)
     }
 }
 
-export async function deleteReq() {
+export async function deleteReq(path) {
     try {
-        await fetch(URL, {method: 'delete'});
+        await fetch(URL + path, {method: 'delete'});
     } catch (e) {
         console.error('DELETE', e)
     }
 }
 
-export async function putReq(data, id) {
+export async function putReq(path, data) {
     try {
-        let response = await fetch(URL + id, {
+        let response = await fetch(URL + path, {
             method: 'PUT',
             body: JSON.stringify(data),
             headers: {

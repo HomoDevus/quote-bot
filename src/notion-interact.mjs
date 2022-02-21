@@ -6,7 +6,7 @@ config()
 const dataBaseId = process.env.NOTION_DATABASE_ID;
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 export let books = [];
-export let notes = [];
+let notes = [];
 
 Promise.delay = function(t, val) {
     return new Promise(resolve => {
@@ -68,7 +68,6 @@ export async function getAllPagesLink() {
             }
         }
     )
-    console.log(books)
 }
 
 // module.exports.getQuote = async function getQuote() {

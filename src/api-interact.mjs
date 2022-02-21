@@ -4,8 +4,9 @@ export async function updateAPI(books) {
     let dbBooks = await getReq('/books/');
     let dbNotes = await getReq('/notes/');
 
+    // Add missing books and notes
     for (let book of books) {
-        // Get book from API
+        // Getting db version of book in the loop
         let dbTargetBook = dbBooks.filter(dbBook => dbBook.title === book.title)
         if (dbTargetBook.length === 0) { // If book dosen't exist on API
             // Add book to API
@@ -19,14 +20,6 @@ export async function updateAPI(books) {
             let dbBookNotes = dbNotes.filter((note) => note.bookId === dbTargetBook.id); // Notes from Server
             let bookNotes = book.notes; // Notes from Notion
             let toRemove, toAdd
-
-            function arrayStringfy(array) {
-                return array.map(item => JSON.stringify(item))
-            }
-
-            // In order to compare objects we need to stringfy them.
-            // dbBookNotes = arrayStringfy(dbBookNotes)
-            // bookNotes = arrayStringfy(bookNotes)
 
             // Add notes that exist on Server but not in Notion
             let dbNotesText = dbBookNotes.map(note => note.quoteText)
@@ -43,6 +36,16 @@ export async function updateAPI(books) {
             for (let noteToAdd of toAdd) {
                 await postReq('/notes/', {...noteToAdd, bookId: dbTargetBook.id})
             }
+        }
+    }
+
+    // Delete removed books with its notes
+    for (let dbBook of dbBooks) {
+        let book = books.filter(book => book.title === dbBook.title)
+
+        // If book from db dosen't exist in Notion
+        if (book.length === 0) {
+            await deleteReq(`/books/${dbBook.id}`)
         }
     }
 }
