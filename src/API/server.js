@@ -1,10 +1,12 @@
 import jsonServer from 'json-server'
 import {update} from "../dbUpdate/main.js";
-import {botKill, botStart} from "./botControl.mjs";
+import {botKill, botStart} from "../telegramBot/botControl.mjs";
 
 const server = jsonServer.create()
-const router = jsonServer.router('API/db.json', {})
+const router = jsonServer.router('src/API/db.json', {})
 const middlewares = jsonServer.defaults()
+
+const PORT = process.env.PORT || 8000
 
 server.use(middlewares)
 server.use(async function (req, res, next) {
@@ -23,6 +25,7 @@ server.use(async function (req, res, next) {
 })
 server.use(router)
 server.use(jsonServer.rewriter('API/routes.json'))
-server.listen(process.env.PORT || 8000, () => {
-  console.log('JSON Server is running')
+server.listen(PORT, async () => {
+  console.log('JSON Server is running on port:', PORT)
+  await botStart()
 })
