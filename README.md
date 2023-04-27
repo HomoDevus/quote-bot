@@ -17,7 +17,7 @@ You can see available bot commands below.
 
 ``test`` - test that bot is running. It will send you test message.
 
-``update`` - update database. Do this after adding notes n=to notion.
+``update`` - update database. Do this after adding notes to notion.
 ## Environment variables
 
 ### Required
