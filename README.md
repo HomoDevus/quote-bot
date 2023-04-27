@@ -17,8 +17,7 @@ You can see available bot commands below.
 
 ``test`` - test that bot is running. It will send you test message.
 
-``update`` - update database. Same as ``/bot-start``, but telegram command.
-
+``update`` - update database.
 ## Environment variables
 
 ### Required
