@@ -9,7 +9,7 @@ const bot = new Telegraf(process.env.BOT_TOKEN) // get the token from envirement
 const chatId = process.env.CHAT_ID
 
 let cronExpression = '0 8,19 * * *'
-let cronDailyQuoteJob
+let cronDailyQuoteJob = cron.schedule(cronExpression, sendRandomQuote) 
 
 export async function botStart() {
   bot.command('is_running', async (ctx) => {
@@ -81,3 +81,4 @@ function toEscapeMSg(str) {
     .replace(/\(/gi, '\\(')
     .replace(/!/gi, '\\!');
 }
+
