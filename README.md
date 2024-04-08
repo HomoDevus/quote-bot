@@ -2,7 +2,7 @@
 This is server that manages database for quote bot. Allows to store quote data in database instead of making 
 request to Notion each time.
 
-## How to set up
+## How to set it up
 
 1. Duplicate notion database template for your book notes [from here](https://adjoining-busby-a09.notion.site/c740fe8358284c90a6953fe98c944247?v=f37d1ca7dec44187aa05172dd68ee089&pvs=4).
 2. Add some book notes to your notion database.
