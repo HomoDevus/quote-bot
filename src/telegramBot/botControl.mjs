@@ -8,7 +8,7 @@ import { updateAPI } from '../dbUpdate/api-interact.mjs';
 const bot = new Telegraf(process.env.BOT_TOKEN) // get the token from envirement variable
 const chatId = process.env.CHAT_ID
 
-let cronExpression = '0 8,19 * * *'
+let cronExpression = '0 8,13 * * *'
 let cronDailyQuoteJob = cron.schedule(cronExpression, sendRandomQuote) 
 
 export async function botStart() {

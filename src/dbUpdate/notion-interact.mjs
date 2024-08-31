@@ -60,8 +60,8 @@ export async function getAllPagesLink() {
                     });
                 }
                 books.push({
-                    title: page.header.properties.Title.title[0].plain_text,
-                    author: page.header.properties.Author.rich_text[0].plain_text,
+                    title: page.header.properties.Title.title[0]?.plain_text ?? 'Title not specified',
+                    author: page.header.properties.Author.rich_text[0]?.plain_text ?? 'Author not specified',
                     notes: notes
                 })
                 notes = [];
