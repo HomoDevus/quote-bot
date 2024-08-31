@@ -1,9 +1,10 @@
 import fetch from "node-fetch";
 import {config} from "dotenv";
+import { DEFAULT_PORT } from '../API/server.js';
 
 config()
 
-const URL = process.env.API_URL
+const URL = process.env.API_URL ?? `http://localhost:${process.env.PORT ?? DEFAULT_PORT}`
 
 export async function getReq(path, id = false) {
     if (id) {

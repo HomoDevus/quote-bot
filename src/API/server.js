@@ -6,7 +6,8 @@ const server = jsonServer.create()
 const router = jsonServer.router('src/API/db.json', {})
 const middlewares = jsonServer.defaults()
 
-const PORT = process.env.PORT || 7000
+export const DEFAULT_PORT = 7000
+const PORT = process.env.PORT || DEFAULT_PORT
 
 server.use(middlewares)
 server.use(async function (req, res, next) {
