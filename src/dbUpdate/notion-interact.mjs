@@ -47,7 +47,7 @@ export async function getAllPagesLink() {
             for (let page of result) {
                 let id = 0;
                 for (let section of page.sections.results) {
-                    if (section.paragraph.text.length === 0) continue;
+                    if (!section.paragraph || section.paragraph.text.length === 0) continue;
                     let sectionText = '';
                     for (let textPart of section.paragraph.text) {
                         sectionText += textPart.plain_text
